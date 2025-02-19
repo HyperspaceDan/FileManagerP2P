@@ -70,7 +70,7 @@ namespace FileManagerP2P.Platforms.Windows
             return Task.CompletedTask;
         }
 
-        private void CopyDirectory(string sourceDir, string destDir)
+        private static void CopyDirectory(string sourceDir, string destDir)
         {
             var dir = new DirectoryInfo(sourceDir);
             Directory.CreateDirectory(destDir);
