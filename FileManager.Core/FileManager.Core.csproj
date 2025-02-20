@@ -7,11 +7,17 @@
 	<RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
-  <ItemGroup>
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net9.0-windows'">
+		<DefineConstants>WINDOWS</DefineConstants>
+	</PropertyGroup>
+
+
+	<ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
 	<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.8" />
 	<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+    <Compile Include="Platforms\Windows\**\*.cs" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
 
   </ItemGroup>
 

@@ -2,6 +2,13 @@
 using Microsoft.Extensions.Logging;
 using Syncfusion.Maui.Toolkit.Hosting;
 
+using FileManager.Core.Interfaces;                    // For IFileSystem
+using FileManagerP2P;              // For WindowsFileSystem
+using System.IO;
+using Microsoft.Maui.Storage;                        // For FileSystem
+
+
+
 namespace FileManagerP2P;
 
 public static class MauiProgram
@@ -41,7 +48,15 @@ public static class MauiProgram
 
 		builder.Services.AddTransientWithShellRoute<ProjectDetailPage, ProjectDetailPageModel>("project");
 		builder.Services.AddTransientWithShellRoute<TaskDetailPage, TaskDetailPageModel>("task");
-		
-		return builder.Build();
+
+#if WINDOWS
+		builder.Services.AddSingleton<FileManager.Core.Interfaces.IFileSystem>(sp => 
+			new FileManagerP2P.Platforms.Windows.WindowsFileSystem(
+				sp.GetRequiredService<ILogger<FileManagerP2P.Platforms.Windows.WindowsFileSystem>>(),
+				Path.Combine(FileSystem.AppDataDirectory, "Files")
+			));
+#endif
+
+        return builder.Build();
 	}
 }
