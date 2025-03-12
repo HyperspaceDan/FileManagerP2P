@@ -8,6 +8,8 @@ using FileManagerP2P;              // For WindowsFileSystem
 using System.IO;
 using Microsoft.Maui.Storage;                        // For FileSystem
 using FileManagerP2P.Services;
+using System.Security;
+
 #if WINDOWS
 using FileManagerP2P.Platforms.Windows;              // Add Windows-specific namespace
 #endif
@@ -83,13 +85,70 @@ public static class MauiProgram
 
             // We need to handle the async factory method since DI doesn't natively support async
             // This is a common pattern to handle async factory methods with sync DI
-            var task = WindowsFileSystem.CreateWithSecurePathAsync(logger, pathProvider);
+            // Create immediately with default path
+            //Better approach with async factory and initialization tracking
+            var fileSystem = new WindowsFileSystem(logger);
 
-            // This is not ideal but necessary for DI integration
-            // In production, consider alternatives like IOptions pattern
-            return task.GetAwaiter().GetResult();
+            // Start async initialization separately
+            _ = InitializeFileSystemAsync(fileSystem, pathProvider, logger);
+
+            return fileSystem;
         });
+        static async Task InitializeFileSystemAsync(
+            WindowsFileSystem fileSystem,
+            IFileSystemPathProvider pathProvider,
+            ILogger logger)
+        {
+            try
+            {
+                var customPath = await pathProvider.GetRootPathAsync();
+                logger.LogInformation("Retrieved root path: {Path}", customPath);
+
+                if (customPath != FileSystem.AppDataDirectory)
+                {
+                    logger.LogInformation("Custom path detected, starting migration from {OldPath} to {NewPath}",
+                FileSystem.AppDataDirectory, customPath);
+
+                    // Migrate data to the custom path
+                    await fileSystem.MigrateToNewRoot(customPath);
+                    logger.LogInformation("Migration completed successfully");
+
+                }
+                else
+                {
+                    logger.LogInformation("Using default application path");
+
+                }
+            }
+            catch (SecurityException ex)
+            {
+                // Security exceptions are important to log with high severity
+                logger.LogError(ex, "Security violation during path initialization: {Message}", ex.Message);
+
+                // Consider displaying to the user
+                await Shell.Current.DisplayAlert("Security Error",
+                    "Cannot access the configured storage location due to security restrictions. Using default location instead.", "OK");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                // Permission issues
+                logger.LogError(ex, "Permission denied accessing custom path: {Message}", ex.Message);
+            }
+            catch (IOException ex)
+            {
+                // File system errors
+                logger.LogError(ex, "I/O error during path initialization: {Message}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // Fallback for other errors
+                logger.LogError(ex, "Failed to initialize with custom path: {Message}", ex.Message);
+
+            }
+        }
+
 #endif
         return builder.Build();
     }
+    
 }

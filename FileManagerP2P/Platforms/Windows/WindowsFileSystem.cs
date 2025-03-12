@@ -8,6 +8,7 @@ using Microsoft.Maui.Storage;
 using FileManager.Core.Interfaces;
 using FileManager.Core.Models;
 using FileManager.Core.Exceptions;
+using FileManagerP2P.Services;
 using System.Security;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -786,30 +787,30 @@ namespace FileManagerP2P.Platforms.Windows
             }
         }
         public async Task MigrateToNewRoot(string newRootPath, CancellationToken cancellationToken = default)
-{
-    ThrowIfDisposed();
-    
-    try
-    {
-        // Validate the new path
-        Services.PathValidator.ValidateCustomRootPath(newRootPath);
+        {
+            ThrowIfDisposed();
         
-        // Create the new root if it doesn't exist
-        if (!Directory.Exists(newRootPath))
-            Directory.CreateDirectory(newRootPath);
+            try
+            {
+                // Validate the new path
+                PathValidator.ValidateCustomRootPath(newRootPath);
         
-        // Migrate data
-        await MigrateDataIfNeeded(_rootPath, newRootPath, cancellationToken);
+                // Create the new root if it doesn't exist
+                if (!Directory.Exists(newRootPath))
+                    Directory.CreateDirectory(newRootPath);
         
-        // Note: This doesn't change the current instance's root path
-        // A new instance needs to be created with the new path
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Failed to migrate data to new root path: {NewPath}", newRootPath);
-        throw;
-    }
-}
+                // Migrate data
+                await MigrateDataIfNeeded(_rootPath, newRootPath, cancellationToken);
+        
+                // Note: This doesn't change the current instance's root path
+                // A new instance needs to be created with the new path
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to migrate data to new root path: {NewPath}", newRootPath);
+                throw;
+            }
+        }
         private async Task MigrateDataIfNeeded(string sourcePath, string destinationPath,
             CancellationToken cancellationToken = default)
         {

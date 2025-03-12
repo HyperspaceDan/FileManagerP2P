@@ -9,15 +9,11 @@ using Microsoft.Maui.Storage;
 
 namespace FileManagerP2P.Services
 {
-    public class SecureFileSystemPathProvider : IFileSystemPathProvider
+    public class SecureFileSystemPathProvider (string defaultPath): IFileSystemPathProvider
     {
         private const string RootPathKey = "FileSystem_RootPath";
-        private readonly string _defaultPath;
-
-        public SecureFileSystemPathProvider(string defaultPath)
-        {
-            _defaultPath = defaultPath ?? throw new ArgumentNullException(nameof(defaultPath));
-        }
+        private readonly string _defaultPath = defaultPath ?? throw new ArgumentNullException(nameof(defaultPath));
+        
 
         public async Task<string> GetRootPathAsync()
         {
