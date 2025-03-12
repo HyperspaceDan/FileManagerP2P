@@ -18,8 +18,50 @@ using System.Threading;
 
 namespace FileManagerP2P.Platforms.Windows
 {
+
     public partial class WindowsFileSystem : FileManager.Core.Interfaces.IFileSystem, IDisposable, IAsyncDisposable
     {
+        public static async Task<WindowsFileSystem> CreateWithSecurePathAsync(
+            ILogger<WindowsFileSystem> logger,
+            IFileSystemPathProvider pathProvider)
+        {
+            ArgumentNullException.ThrowIfNull(pathProvider);
+
+            var rootPath = await pathProvider.GetRootPathAsync();
+
+            return new WindowsFileSystem(logger, rootPath, new QuotaConfiguration
+            {
+                MaxSizeBytes = 1024 * 1024 * 1024, // 1GB default
+                RootPath = rootPath,
+                WarningThreshold = 0.9f,
+                EnforceQuota = true
+            });
+        }
+
+        public static async Task<WindowsFileSystem> CreateWithSecurePathAsync(
+            ILogger<WindowsFileSystem> logger,
+            IFileSystemPathProvider pathProvider,
+            QuotaConfiguration baseConfig)
+        {
+            ArgumentNullException.ThrowIfNull(pathProvider);
+            ArgumentNullException.ThrowIfNull(baseConfig);
+
+            var rootPath = await pathProvider.GetRootPathAsync();
+
+            // Create a new QuotaConfiguration with the secure path
+            var quotaConfig = new QuotaConfiguration
+            {
+                MaxSizeBytes = baseConfig.MaxSizeBytes,
+                RootPath = rootPath, // Override with secure path
+                WarningThreshold = baseConfig.WarningThreshold,
+                EnforceQuota = baseConfig.EnforceQuota
+            };
+
+            return new WindowsFileSystem(logger, rootPath, quotaConfig);
+        }
+
+
+
         private long? _cachedUsage;
         private DateTime _lastUsageCheck = DateTime.MinValue;
         private static readonly TimeSpan UsageCacheDuration = TimeSpan.FromMinutes(5);
@@ -743,31 +785,75 @@ namespace FileManagerP2P.Platforms.Windows
                 throw new ArgumentException("Invalid path", nameof(path), ex);
             }
         }
-        private async Task MigrateDataIfNeeded(string oldPath, CancellationToken cancellationToken = default)
+        public async Task MigrateToNewRoot(string newRootPath, CancellationToken cancellationToken = default)
+{
+    ThrowIfDisposed();
+    
+    try
+    {
+        // Validate the new path
+        Services.PathValidator.ValidateCustomRootPath(newRootPath);
+        
+        // Create the new root if it doesn't exist
+        if (!Directory.Exists(newRootPath))
+            Directory.CreateDirectory(newRootPath);
+        
+        // Migrate data
+        await MigrateDataIfNeeded(_rootPath, newRootPath, cancellationToken);
+        
+        // Note: This doesn't change the current instance's root path
+        // A new instance needs to be created with the new path
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Failed to migrate data to new root path: {NewPath}", newRootPath);
+        throw;
+    }
+}
+        private async Task MigrateDataIfNeeded(string sourcePath, string destinationPath,
+            CancellationToken cancellationToken = default)
         {
-            if (Directory.Exists(oldPath) && oldPath != _rootPath)
+            if (sourcePath == destinationPath)
+                return;
+
+            if (!Directory.Exists(sourcePath))
+                return;
+
+            // Calculate total size
+            var totalSize = Directory.GetFiles(sourcePath, "*", SearchOption.AllDirectories)
+                                 .Sum(f => new FileInfo(f).Length);
+
+            // Check quota
+            await ValidateQuota(totalSize, cancellationToken);
+
+            // Create progress reporting (optional)
+            var progress = new Progress<double>(p =>
+                _logger.LogInformation("Migration progress: {Progress:P2}", p));
+
+            // Copy all data
+            foreach (var item in Directory.GetFileSystemEntries(sourcePath, "*", SearchOption.AllDirectories))
             {
-                var totalSize = Directory.GetFiles(oldPath, "*", SearchOption.AllDirectories)
-                               .Sum(f => new FileInfo(f).Length);
-                await ValidateQuota(totalSize, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                var relativePath = Path.GetRelativePath(sourcePath, item);
+                var newPath = Path.Combine(destinationPath, relativePath);
 
-                foreach (var item in Directory.GetFileSystemEntries(oldPath, "*", SearchOption.AllDirectories))
+                if (File.Exists(item))
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var relativePath = Path.GetRelativePath(oldPath, item);
-                    var newPath = Path.Combine(_rootPath, relativePath);
-
-                    if (File.Exists(item))
+                    await RetryOnIO(() =>
                     {
-                        await RetryOnIO(() =>
-                        {
-                            Directory.CreateDirectory(Path.GetDirectoryName(newPath)!);
-                            return Task.CompletedTask;
-                        });
-                        await CopyItem(item, newPath, null, cancellationToken);
-                    }
+                        Directory.CreateDirectory(Path.GetDirectoryName(newPath)!);
+                        return Task.CompletedTask;
+                    });
+                    await CopyItem(item, newPath, progress, cancellationToken);
+                }
+                else if (Directory.Exists(item))
+                {
+                    // Create directory structure (missing in the second version)
+                    await CreateDirectory(newPath, cancellationToken);
                 }
             }
+
+            _cachedUsage = null; // Invalidate cache after migration
         }
         private void LogOperation(string operation, string path)
         {
