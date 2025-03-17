@@ -92,9 +92,7 @@ namespace FileManagerP2P.Platforms.Windows
             if (quotaConfig.WarningThreshold <= 0 || quotaConfig.WarningThreshold > 1)
                 throw new ArgumentException("WarningThreshold must be between 0 and 1", nameof(quotaConfig));
 
-
-
-                    _logger = logger;
+            _logger = logger;
             _rootPath = Path.GetFullPath(rootPath);
             _quotaConfig = quotaConfig;
 
