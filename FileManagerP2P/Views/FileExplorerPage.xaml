@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:FileManagerP2P.ViewModels"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:models="clr-namespace:FileManager.Core.Models;assembly=FileManager.Core"
+             x:Class="FileManagerP2P.Views.FileExplorerPage"
+             Title="File Explorer">
+
+    <ContentPage.Resources>
+        <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="12">
+        <!-- File System Navigation Bar -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto">
+            <Button Grid.Column="0"
+                    Text="↑"
+                    Command="{Binding NavigateUpFileSystemCommand}"
+                    IsEnabled="{Binding CanNavigateUpFileSystem}"
+                    Margin="0,0,8,0"
+                    WidthRequest="40"
+                    HeightRequest="40" />
+
+            <Border Grid.Column="1"
+                   Stroke="LightGray"
+                   Padding="8,0"
+                   StrokeShape="RoundedRectangle 5">
+                <Label Text="{Binding CurrentDirectoryPath}"
+                       VerticalOptions="Center" 
+                       LineBreakMode="TailTruncation" />
+            </Border>
+
+            <Button Grid.Column="2"
+                    Text="↻"
+                    Command="{Binding RefreshFileSystemCommand}"
+                    Margin="8,0,0,0"
+                    WidthRequest="40"
+                    HeightRequest="40" />
+
+            <Button Grid.Column="3"
+                    Text="+"
+                    Command="{Binding CreateFileSystemFolderCommand}"
+                    CommandParameter="New Folder"
+                    Margin="8,0,0,0"
+                    WidthRequest="40"
+                    HeightRequest="40" />
+        </Grid>
+
+        <!-- Search Bar -->
+        <Grid Grid.Row="1" Margin="0,8,0,0" ColumnDefinitions="*,Auto">
+            <SearchBar Grid.Column="0"
+                       Placeholder="Search files and folders..."
+                       Text="{Binding FileSystemSearchQuery}"
+                       SearchCommand="{Binding SearchFileSystemCommand}" />
+
+            <Label Grid.Column="1"
+                   Text="{Binding DeviceIdentifier}"
+                   VerticalOptions="Center"
+                   Margin="8,0,0,0" />
+        </Grid>
+
+        <!-- Error Message -->
+        <Border Grid.Row="2" 
+               IsVisible="{Binding HasFileSystemError}"
+               BackgroundColor="LightPink"
+               Margin="0,8,0,0"
+               Padding="12"
+               StrokeShape="RoundedRectangle 5">
+            <Label Text="{Binding FileSystemErrorMessage}"
+                   TextColor="DarkRed" />
+        </Border>
+
+        <!-- File System Items List -->
+        <RefreshView Grid.Row="2" 
+                     IsRefreshing="{Binding IsFileSystemLoading}"
+                     Command="{Binding RefreshFileSystemCommand}"
+                     IsVisible="{Binding HasFileSystemError, Converter={StaticResource InvertedBoolConverter}}">
+            <CollectionView ItemsSource="{Binding FileSystemItems}"
+                          SelectedItem="{Binding SelectedFileSystemItem}"
+                          SelectionMode="Single">
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center">
+                        <Image Source="folder_empty.png" WidthRequest="64" HeightRequest="64" />
+                        <Label Text="This folder is empty" FontSize="18" Margin="0,12,0,0" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:FileSystemItem">
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems>
+                                    <SwipeItem Text="Delete"
+                                               BackgroundColor="Red"
+                                               Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FileExplorerViewModel}}, Path=DeleteSelectedFileSystemItemCommand}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+
+                            <Grid Padding="5" ColumnDefinitions="Auto,*,Auto">
+                                <!-- Icon -->
+                                <Image Grid.Column="0"
+                                       Source="{Binding IsDirectory, Converter={StaticResource BoolToImageConverter}, ConverterParameter='folder.png,file.png'}"
+                                       WidthRequest="32"
+                                       HeightRequest="32"
+                                       Margin="0,0,12,0"
+                                       VerticalOptions="Center" />
+
+                                <!-- Name and Details -->
+                                <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                    <Label Text="{Binding Name}"
+                                           FontAttributes="Bold"
+                                           LineBreakMode="TailTruncation" />
+
+                                    <HorizontalStackLayout Spacing="8">
+                                        <Label Text="{Binding LastModified, StringFormat='{0:g}'}"
+                                               FontSize="12"
+                                               TextColor="Gray" />
+
+                                        <Label Text="{Binding Size, StringFormat='{0:N0} bytes'}"
+                                               FontSize="12"
+                                               TextColor="Gray"
+                                               IsVisible="{Binding IsDirectory, Converter={StaticResource InvertedBoolConverter}}" />
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+
+                                <!-- Arrow for directories -->
+                                <Label Grid.Column="2"
+                                       Text="›"
+                                       FontSize="24"
+                                       VerticalOptions="Center"
+                                       IsVisible="{Binding IsDirectory}" />
+                            </Grid>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Status Bar -->
+        <StackLayout Grid.Row="3" 
+                     Orientation="Horizontal" 
+                     Margin="0,8,0,0">
+            <ActivityIndicator IsRunning="{Binding IsFileSystemLoading}" 
+                               WidthRequest="20" 
+                               HeightRequest="20"
+                               Margin="0,0,8,0" />
+            <Label Text="{Binding FileSystemItems.Count, StringFormat='{0} items'}" 
+                   VerticalOptions="Center" />
+        </StackLayout>
+    </Grid>
+
+</ContentPage>

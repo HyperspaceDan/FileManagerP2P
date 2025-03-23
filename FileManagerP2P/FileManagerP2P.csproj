@@ -90,10 +90,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Views\FileExplorerPage.xaml.cs">
+	    <DependentUpon>FileExplorerPage.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
 	  <MauiXaml Update="Views\MainPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\NewPage1.xaml">
+	  <MauiXaml Update="Views\FileExplorerPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>
