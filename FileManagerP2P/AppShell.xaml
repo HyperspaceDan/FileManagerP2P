@@ -4,11 +4,12 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:sf="clr-namespace:Syncfusion.Maui.Toolkit.SegmentedControl;assembly=Syncfusion.Maui.Toolkit"
+    xmlns:views="clr-namespace:FileManagerP2P.Views"
     xmlns:pages="clr-namespace:FileManagerP2P.Pages"
     Shell.FlyoutBehavior="Flyout"
     Title="FileManagerP2P">
 
-    <ShellContent
+    <!--<ShellContent
         Title="Dashboard"
         Icon="{StaticResource IconDashboard}"
         ContentTemplate="{DataTemplate pages:MainPage}"
@@ -24,7 +25,29 @@
         Title="Manage Meta"
         Icon="{StaticResource IconMeta}"
         ContentTemplate="{DataTemplate pages:ManageMetaPage}"
-        Route="manage" />
+        Route="manage" />-->
+
+    <ShellContent
+    Title="Home"
+    ContentTemplate="{DataTemplate views:MainPage}"
+    Route="MainPage" />
+
+    <ShellContent
+    Title="File Explorer"
+    Icon="folder.png"
+    ContentTemplate="{DataTemplate views:FileExplorerPage}"
+    Route="FileExplorerPage" />
+
+    <Shell.FlyoutHeader>
+        <Grid HeightRequest="100" 
+          BackgroundColor="#512BD4" 
+          Padding="20">
+            <Label Text="FileManagerP2P"
+               TextColor="White"
+               FontSize="24"
+               VerticalOptions="Center" />
+        </Grid>
+    </Shell.FlyoutHeader>
 
     <Shell.FlyoutFooter>
         <Grid Padding="15">

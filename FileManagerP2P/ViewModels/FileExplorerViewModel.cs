@@ -29,6 +29,7 @@ namespace FileManagerP2P.ViewModels
         private readonly FileManager.Core.Interfaces.IFileSystem _fileSystem;
         private readonly ITelephonyService _telephonyService;
         private CancellationTokenSource? _cts;
+        partial void OnSelectedFileSystemItemChanged(FileSystemItem value);
 
         private ObservableCollection<FileSystemItem> _fileSystemItems = [];
         public ObservableCollection<FileSystemItem> FileSystemItems
@@ -98,6 +99,176 @@ namespace FileManagerP2P.ViewModels
         {
             get => _deviceIdentifier;
             set => SetProperty(ref _deviceIdentifier, value);
+        }
+
+
+
+
+
+        // Add these properties to the FileExplorerViewModel class:
+
+        private bool _isPreviewVisible;
+        public bool IsPreviewVisible
+        {
+            get => _isPreviewVisible;
+            set => SetProperty(ref _isPreviewVisible, value);
+        }
+
+        private string _previewContent = string.Empty;
+        public string PreviewContent
+        {
+            get => _previewContent;
+            set => SetProperty(ref _previewContent, value);
+        }
+
+        private bool _isPreviewLoading;
+        public bool IsPreviewLoading
+        {
+            get => _isPreviewLoading;
+            set => SetProperty(ref _isPreviewLoading, value);
+        }
+
+        private bool _isPreviewImageVisible;
+        public bool IsPreviewImageVisible
+        {
+            get => _isPreviewImageVisible;
+            set => SetProperty(ref _isPreviewImageVisible, value);
+        }
+
+        private bool _isPreviewTextVisible;
+        public bool IsPreviewTextVisible
+        {
+            get => _isPreviewTextVisible;
+            set => SetProperty(ref _isPreviewTextVisible, value);
+        }
+
+        private bool _isPreviewUnsupportedVisible;
+        public bool IsPreviewUnsupportedVisible
+        {
+            get => _isPreviewUnsupportedVisible;
+            set => SetProperty(ref _isPreviewUnsupportedVisible, value);
+        }
+
+        private ImageSource? _previewImage;
+        public ImageSource? PreviewImage
+        {
+            get => _previewImage;
+            set => SetProperty(ref _previewImage, value);
+        }
+
+        // Then add this method to handle file selection and preview
+        [RelayCommand]
+        private async Task PreviewSelectedFileAsync()
+        {
+            if (SelectedFileSystemItem == null || SelectedFileSystemItem.IsDirectory)
+            {
+                IsPreviewVisible = false;
+                return;
+            }
+
+            try
+            {
+                IsPreviewLoading = true;
+                IsPreviewVisible = true;
+
+                // Reset preview states
+                IsPreviewImageVisible = false;
+                IsPreviewTextVisible = false;
+                IsPreviewUnsupportedVisible = false;
+
+                string fileExtension = Path.GetExtension(SelectedFileSystemItem.Path).ToLowerInvariant();
+
+                // Handle different file types
+                if (IsImageFile(fileExtension))
+                {
+                    await LoadImagePreviewAsync(SelectedFileSystemItem.Path);
+                }
+                else if (IsTextFile(fileExtension))
+                {
+                    await LoadTextPreviewAsync(SelectedFileSystemItem.Path);
+                }
+                else
+                {
+                    // Unsupported file type
+                    IsPreviewUnsupportedVisible = true;
+                    PreviewContent = $"Preview not available for {fileExtension} files";
+                }
+            }
+            catch (Exception ex)
+            {
+                IsPreviewUnsupportedVisible = true;
+                PreviewContent = $"Error loading preview: {ex.Message}";
+            }
+            finally
+            {
+                IsPreviewLoading = false;
+            }
+        }
+
+        private static bool IsImageFile(string extension)
+        {
+            return extension is ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp";
+        }
+
+        private static bool IsTextFile(string extension)
+        {
+            return extension is ".txt" or ".json" or ".xml" or ".html" or ".htm" or ".css" or ".js" or ".md"
+                or ".cs" or ".xaml" or ".csv" or ".log";
+        }
+
+        private async Task LoadImagePreviewAsync(string path)
+        {
+            try
+            {
+                // Load image from file on a background thread
+                var imageSource = await Task.Run(() => ImageSource.FromFile(path));
+                PreviewImage = ImageSource.FromFile(path);
+                IsPreviewImageVisible = true;
+            }
+            catch
+            {
+                IsPreviewUnsupportedVisible = true;
+                PreviewContent = "Unable to load image preview";
+            }
+        }
+
+        private async Task LoadTextPreviewAsync(string path)
+        {
+            try
+            {
+                // Read text file content (with limit to prevent loading very large files)
+                const int maxPreviewLength = 100000; // Limit preview to 100K characters
+                using var stream = await _fileSystem.OpenFile(path);
+                using var reader = new StreamReader(stream);
+
+                var content = await reader.ReadToEndAsync();
+                if (content.Length > maxPreviewLength)
+                {
+                    content = string.Concat(content.AsSpan(0, maxPreviewLength) , "...\n\n[File too large to display completely]");
+                }
+
+                PreviewContent = content;
+                IsPreviewTextVisible = true;
+            }
+            catch
+            {
+                IsPreviewUnsupportedVisible = true;
+                PreviewContent = "Unable to load text preview";
+            }
+        }
+
+        // Update the property observer for SelectedFileSystemItem
+        partial void OnSelectedFileSystemItemChanged(FileSystemItem value)
+        {
+            if (value != null)
+            {
+                // Call the method directly instead of using the command
+                PreviewSelectedFileAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                IsPreviewVisible = false;
+            }
         }
 
 

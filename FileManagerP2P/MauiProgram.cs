@@ -9,9 +9,16 @@ using System.IO;
 using Microsoft.Maui.Storage;                        // For FileSystem
 using FileManagerP2P.Services;
 using System.Security;
+using FileManagerP2P.ViewModels;
+using FileManagerP2P.Views;
 
 #if WINDOWS
 using FileManagerP2P.Platforms.Windows;              // Add Windows-specific namespace
+#endif
+
+#if ANDROID
+using FileManagerP2P.Platforms.Android.Services;
+using ITelephonyService = FileManagerP2P.Services.ITelephonyService;
 #endif
 
 
@@ -148,6 +155,62 @@ public static class MauiProgram
         }
 
 #endif
+
+        // Register views and view models
+        builder.Services.AddSingleton<FileExplorerViewModel>();
+        builder.Services.AddSingleton<FileExplorerPage>();
+#if ANDROID
+    builder.Services.AddSingleton<ITelephonyService, AndroidTelephonyService>();
+    
+    // Register AndroidFileSystem with similar pattern to Windows
+    builder.Services.AddSingleton<FileManager.Core.Interfaces.IFileSystem>(serviceProvider =>
+    {
+        var logger = serviceProvider.GetRequiredService<ILogger<FileManagerP2P.Platforms.Android.AndroidFileSystem>>();
+        var pathProvider = serviceProvider.GetRequiredService<IFileSystemPathProvider>();
+        
+        // Create immediately with default path
+        var fileSystem = new FileManagerP2P.Platforms.Android.AndroidFileSystem(logger);
+        
+        // Start async initialization separately
+        _ = InitializeAndroidFileSystemAsync(fileSystem, pathProvider, logger);
+        
+        return fileSystem;
+    });
+    
+    static async Task InitializeAndroidFileSystemAsync(
+        FileManagerP2P.Platforms.Android.AndroidFileSystem fileSystem,
+        IFileSystemPathProvider pathProvider,
+        ILogger logger)
+    {
+        try
+        {
+            var customPath = await pathProvider.GetRootPathAsync();
+            logger.LogInformation("Retrieved Android root path: {Path}", customPath);
+            
+            if (customPath != FileSystem.AppDataDirectory)
+            {
+                logger.LogInformation("Custom path detected on Android, starting migration from {OldPath} to {NewPath}",
+                    FileSystem.AppDataDirectory, customPath);
+                
+                // Migrate data to the custom path
+                await fileSystem.MigrateToNewRoot(customPath);
+                logger.LogInformation("Android migration completed successfully");
+            }
+            else
+            {
+                logger.LogInformation("Using default Android application path");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to initialize Android file system with custom path: {Message}", ex.Message);
+            await Shell.Current.DisplayAlert("Storage Error",
+                "Cannot access the configured storage location. Using default location instead.", "OK");
+        }
+    }
+#endif
+
+
         return builder.Build();
     }
     

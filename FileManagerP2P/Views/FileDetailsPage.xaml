@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+              xmlns:viewmodels="clr-namespace:FileManagerP2P.ViewModels"
+              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+              x:Class="FileManagerP2P.Views.FileDetailsPage"
+             Title="File Details">
+    <ScrollView>
+        <Grid Padding="20" RowSpacing="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- File Properties Section -->
+            <VerticalStackLayout Grid.Row="0" Spacing="15">
+                <Image Source="{Binding FileIcon}"
+                       HeightRequest="64" 
+                       WidthRequest="64"
+                       HorizontalOptions="Start"/>
+
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="15" RowSpacing="10">
+                    <Label Grid.Row="0" Grid.Column="0" Text="Name:" FontAttributes="Bold"/>
+                    <Label Grid.Row="0" Grid.Column="1" Text="{Binding FileName}"/>
+
+                    <Label Grid.Row="1" Grid.Column="0" Text="Size:" FontAttributes="Bold"/>
+                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding FileSize}"/>
+
+                    <Label Grid.Row="2" Grid.Column="0" Text="Modified:" FontAttributes="Bold"/>
+                    <Label Grid.Row="2" Grid.Column="1" Text="{Binding LastModified, StringFormat='{0:g}'}"/>
+
+                    <Label Grid.Row="3" Grid.Column="0" Text="Path:" FontAttributes="Bold"/>
+                    <Label Grid.Row="3" Grid.Column="1" Text="{Binding FilePath}" LineBreakMode="CharacterWrap"/>
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Actions Section -->
+            <HorizontalStackLayout Grid.Row="1" Spacing="10">
+                <Button Text="Open"
+                        Command="{Binding OpenFileCommand}"/>
+                <Button Text="Share"
+                        Command="{Binding ShareFileCommand}"/>
+                <Button Text="Delete"
+                        Command="{Binding DeleteFileCommand}"
+                        BackgroundColor="Red"/>
+            </HorizontalStackLayout>
+
+            <!-- Preview Section -->
+            <Grid Grid.Row="2">
+                <!-- Loading Indicator -->
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                 IsVisible="{Binding IsLoading}"
+                                 HorizontalOptions="Center"
+                                 VerticalOptions="Center"/>
+
+                <!-- Image Preview -->
+                <Image Source="{Binding PreviewImage}"
+                       IsVisible="{Binding IsImagePreview}"
+                       Aspect="AspectFit"
+                       HorizontalOptions="Center"/>
+
+                <!-- Text Preview -->
+                <ScrollView IsVisible="{Binding IsTextPreview}">
+                    <Border Stroke="#E0E0E0"
+                           StrokeThickness="1"
+                           Padding="10"
+                           StrokeShape="RoundedRectangle 5">
+                        <Label Text="{Binding PreviewContent}"
+                               FontFamily="Courier New"/>
+                    </Border>
+                </ScrollView>
+
+                <!-- Unsupported Format -->
+                <VerticalStackLayout IsVisible="{Binding IsUnsupportedFormat}"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center">
+                    <Image Source="file.png"
+                           HeightRequest="64"
+                           WidthRequest="64"/>
+                    <Label Text="Preview not available for this file type"
+                           Margin="0,10,0,0"/>
+                </VerticalStackLayout>
+            </Grid>
+        </Grid>
+    </ScrollView>
+</ContentPage>

@@ -10,10 +10,13 @@ public partial class AppShell : Shell
 		InitializeComponent();
 		var currentTheme = Application.Current!.UserAppTheme;		
 		ThemeSegmentedControl.SelectedIndex = currentTheme == AppTheme.Light ? 0 : 1;
-	}
-	public static async Task DisplaySnackbarAsync(string message)
+        // Register routes for navigation
+        Routing.RegisterRoute(nameof(Views.FileExplorerPage), typeof(Views.FileExplorerPage));
+
+    }
+    public static async Task DisplaySnackbarAsync(string message)
 	{
-		CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+		var cancellationTokenSource = new CancellationTokenSource();
 
 		var snackbarOptions = new SnackbarOptions
 		{

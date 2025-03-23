@@ -11,143 +11,234 @@
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
     </ContentPage.Resources>
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="12">
-        <!-- File System Navigation Bar -->
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto">
-            <Button Grid.Column="0"
-                    Text="↑"
-                    Command="{Binding NavigateUpFileSystemCommand}"
-                    IsEnabled="{Binding CanNavigateUpFileSystem}"
-                    Margin="0,0,8,0"
-                    WidthRequest="40"
-                    HeightRequest="40" />
+    <Grid>
+        <!-- Split view between file explorer and preview panel -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="1"
-                   Stroke="LightGray"
-                   Padding="8,0"
+        <!-- File Explorer Panel -->
+        <Grid Grid.Column="0" RowDefinitions="Auto,Auto,*,Auto" Padding="12">
+            <!-- File System Navigation Bar -->
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto">
+                <Button Grid.Column="0"
+                        Text="↑"
+                        Command="{Binding NavigateUpFileSystemCommand}"
+                        IsEnabled="{Binding CanNavigateUpFileSystem}"
+                        Margin="0,0,8,0"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+
+                <Border Grid.Column="1"
+                       Stroke="LightGray"
+                       Padding="8,0"
+                       StrokeShape="RoundedRectangle 5">
+                    <Label Text="{Binding CurrentDirectoryPath}"
+                           VerticalOptions="Center" 
+                           LineBreakMode="TailTruncation" />
+                </Border>
+
+                <Button Grid.Column="2"
+                        Text="↻"
+                        Command="{Binding RefreshFileSystemCommand}"
+                        Margin="8,0,0,0"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+
+                <Button Grid.Column="3"
+                        Text="+"
+                        Command="{Binding CreateFileSystemFolderCommand}"
+                        CommandParameter="New Folder"
+                        Margin="8,0,0,0"
+                        WidthRequest="40"
+                        HeightRequest="40" />
+            </Grid>
+
+            <!-- Search Bar -->
+            <Grid Grid.Row="1" Margin="0,8,0,0" ColumnDefinitions="*,Auto">
+                <SearchBar Grid.Column="0"
+                           Placeholder="Search files and folders..."
+                           Text="{Binding FileSystemSearchQuery}"
+                           SearchCommand="{Binding SearchFileSystemCommand}" />
+
+                <Label Grid.Column="1"
+                       Text="{Binding DeviceIdentifier}"
+                       VerticalOptions="Center"
+                       Margin="8,0,0,0" />
+            </Grid>
+
+            <!-- Error Message -->
+            <Border Grid.Row="2" 
+                   IsVisible="{Binding HasFileSystemError}"
+                   BackgroundColor="LightPink"
+                   Margin="0,8,0,0"
+                   Padding="12"
                    StrokeShape="RoundedRectangle 5">
-                <Label Text="{Binding CurrentDirectoryPath}"
-                       VerticalOptions="Center" 
-                       LineBreakMode="TailTruncation" />
+                <Label Text="{Binding FileSystemErrorMessage}"
+                       TextColor="DarkRed" />
             </Border>
 
-            <Button Grid.Column="2"
-                    Text="↻"
-                    Command="{Binding RefreshFileSystemCommand}"
-                    Margin="8,0,0,0"
-                    WidthRequest="40"
-                    HeightRequest="40" />
+            <!-- File System Items List -->
+            <RefreshView Grid.Row="2" 
+                         IsRefreshing="{Binding IsFileSystemLoading}"
+                         Command="{Binding RefreshFileSystemCommand}"
+                         IsVisible="{Binding HasFileSystemError, Converter={StaticResource InvertedBoolConverter}}">
+                <CollectionView ItemsSource="{Binding FileSystemItems}"
+                              SelectedItem="{Binding SelectedFileSystemItem}"
+                              SelectionMode="Single">
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center">
+                            <Image Source="folder_empty.png" WidthRequest="64" HeightRequest="64" />
+                            <Label Text="This folder is empty" FontSize="18" Margin="0,12,0,0" />
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
 
-            <Button Grid.Column="3"
-                    Text="+"
-                    Command="{Binding CreateFileSystemFolderCommand}"
-                    CommandParameter="New Folder"
-                    Margin="8,0,0,0"
-                    WidthRequest="40"
-                    HeightRequest="40" />
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:FileSystemItem">
+                            <SwipeView>
+                                <SwipeView.RightItems>
+                                    <SwipeItems>
+                                        <SwipeItem Text="Delete"
+                                                   BackgroundColor="Red"
+                                                   Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FileExplorerViewModel}}, Path=DeleteSelectedFileSystemItemCommand}" />
+                                    </SwipeItems>
+                                </SwipeView.RightItems>
+
+                                <Grid Padding="5" ColumnDefinitions="Auto,*,Auto">
+                                    <!-- Icon -->
+                                    <Image Grid.Column="0"
+                                           Source="{Binding IsDirectory, Converter={StaticResource BoolToImageConverter}, ConverterParameter='folder.png,file.png'}"
+                                           WidthRequest="32"
+                                           HeightRequest="32"
+                                           Margin="0,0,12,0"
+                                           VerticalOptions="Center" />
+
+                                    <!-- Name and Details -->
+                                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                        <Label Text="{Binding Name}"
+                                               FontAttributes="Bold"
+                                               LineBreakMode="TailTruncation" />
+
+                                        <HorizontalStackLayout Spacing="8">
+                                            <Label Text="{Binding LastModified, StringFormat='{0:g}'}"
+                                                   FontSize="12"
+                                                   TextColor="Gray" />
+
+                                            <Label Text="{Binding Size, StringFormat='{0:N0} bytes'}"
+                                                   FontSize="12"
+                                                   TextColor="Gray"
+                                                   IsVisible="{Binding IsDirectory, Converter={StaticResource InvertedBoolConverter}}" />
+                                        </HorizontalStackLayout>
+                                    </VerticalStackLayout>
+
+                                    <!-- Arrow for directories -->
+                                    <Label Grid.Column="2"
+                                           Text="›"
+                                           FontSize="24"
+                                           VerticalOptions="Center"
+                                           IsVisible="{Binding IsDirectory}" />
+                                </Grid>
+                            </SwipeView>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+
+            <!-- Status Bar -->
+            <StackLayout Grid.Row="3" 
+                         Orientation="Horizontal" 
+                         Margin="0,8,0,0">
+                <ActivityIndicator IsRunning="{Binding IsFileSystemLoading}" 
+                                   WidthRequest="20" 
+                                   HeightRequest="20"
+                                   Margin="0,0,8,0" />
+                <Label Text="{Binding FileSystemItems.Count, StringFormat='{0} items'}" 
+                       VerticalOptions="Center" />
+            </StackLayout>
         </Grid>
 
-        <!-- Search Bar -->
-        <Grid Grid.Row="1" Margin="0,8,0,0" ColumnDefinitions="*,Auto">
-            <SearchBar Grid.Column="0"
-                       Placeholder="Search files and folders..."
-                       Text="{Binding FileSystemSearchQuery}"
-                       SearchCommand="{Binding SearchFileSystemCommand}" />
+        <!-- Resizer -->
+        <BoxView Grid.Column="1" 
+                 BackgroundColor="#E0E0E0" 
+                 WidthRequest="1" 
+                 HorizontalOptions="Center"
+                 VerticalOptions="Fill" 
+                 IsVisible="{Binding IsPreviewVisible}" />
 
-            <Label Grid.Column="1"
-                   Text="{Binding DeviceIdentifier}"
-                   VerticalOptions="Center"
-                   Margin="8,0,0,0" />
+        <!-- Preview Panel -->
+        <Grid Grid.Column="2" IsVisible="{Binding IsPreviewVisible}" Padding="12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Preview Header -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                <Label Text="{Binding SelectedFileSystemItem.Name}" 
+                       FontSize="16" 
+                       FontAttributes="Bold"
+                       VerticalOptions="Center" 
+                       LineBreakMode="TailTruncation" />
+
+                <Button Grid.Column="1" 
+                        Text="X" 
+                        Command="{Binding PreviewSelectedAsyncFileCommand}"
+                        CommandParameter="{x:Null}"
+                        WidthRequest="40" 
+                        HeightRequest="40" 
+                        HorizontalOptions="End" />
+            </Grid>
+
+            <!-- Preview Content -->
+            <Grid Grid.Row="1" Margin="0,12,0,0">
+                <!-- Loading Indicator -->
+                <ActivityIndicator IsRunning="{Binding IsPreviewLoading}" 
+                                   HorizontalOptions="Center" 
+                                   VerticalOptions="Center" 
+                                   WidthRequest="50" 
+                                   HeightRequest="50" />
+
+                <!-- Image Preview -->
+                <Image Source="{Binding PreviewImage}" 
+                       IsVisible="{Binding IsPreviewImageVisible}" 
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       Aspect="AspectFit" />
+
+                <!-- Text Preview -->
+                <ScrollView IsVisible="{Binding IsPreviewTextVisible}">
+                    <Border Stroke="#E0E0E0" 
+                           StrokeThickness="1" 
+                           Padding="10" 
+                           StrokeShape="RoundedRectangle 5">
+                        <Label Text="{Binding PreviewContent}" 
+                               TextType="Text" 
+                               FontFamily="Courier New" />
+                    </Border>
+                </ScrollView>
+
+                <!-- Unsupported Format -->
+                <VerticalStackLayout IsVisible="{Binding IsPreviewUnsupportedVisible}" 
+                                     VerticalOptions="Center" 
+                                     HorizontalOptions="Center"
+                                     Spacing="16">
+                    <Image Source="file.png" 
+                           WidthRequest="64" 
+                           HeightRequest="64" 
+                           HorizontalOptions="Center" />
+
+                    <Label Text="{Binding PreviewContent}" 
+                           FontSize="16" 
+                           HorizontalOptions="Center" 
+                           HorizontalTextAlignment="Center" />
+
+                    <Button Text="Open with Default App" 
+                            Command="{Binding OpenSelectedFileSystemItemCommand}" 
+                            HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
         </Grid>
-
-        <!-- Error Message -->
-        <Border Grid.Row="2" 
-               IsVisible="{Binding HasFileSystemError}"
-               BackgroundColor="LightPink"
-               Margin="0,8,0,0"
-               Padding="12"
-               StrokeShape="RoundedRectangle 5">
-            <Label Text="{Binding FileSystemErrorMessage}"
-                   TextColor="DarkRed" />
-        </Border>
-
-        <!-- File System Items List -->
-        <RefreshView Grid.Row="2" 
-                     IsRefreshing="{Binding IsFileSystemLoading}"
-                     Command="{Binding RefreshFileSystemCommand}"
-                     IsVisible="{Binding HasFileSystemError, Converter={StaticResource InvertedBoolConverter}}">
-            <CollectionView ItemsSource="{Binding FileSystemItems}"
-                          SelectedItem="{Binding SelectedFileSystemItem}"
-                          SelectionMode="Single">
-                <CollectionView.EmptyView>
-                    <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center">
-                        <Image Source="folder_empty.png" WidthRequest="64" HeightRequest="64" />
-                        <Label Text="This folder is empty" FontSize="18" Margin="0,12,0,0" />
-                    </VerticalStackLayout>
-                </CollectionView.EmptyView>
-
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:FileSystemItem">
-                        <SwipeView>
-                            <SwipeView.RightItems>
-                                <SwipeItems>
-                                    <SwipeItem Text="Delete"
-                                               BackgroundColor="Red"
-                                               Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FileExplorerViewModel}}, Path=DeleteSelectedFileSystemItemCommand}" />
-                                </SwipeItems>
-                            </SwipeView.RightItems>
-
-                            <Grid Padding="5" ColumnDefinitions="Auto,*,Auto">
-                                <!-- Icon -->
-                                <Image Grid.Column="0"
-                                       Source="{Binding IsDirectory, Converter={StaticResource BoolToImageConverter}, ConverterParameter='folder.png,file.png'}"
-                                       WidthRequest="32"
-                                       HeightRequest="32"
-                                       Margin="0,0,12,0"
-                                       VerticalOptions="Center" />
-
-                                <!-- Name and Details -->
-                                <VerticalStackLayout Grid.Column="1" Spacing="2">
-                                    <Label Text="{Binding Name}"
-                                           FontAttributes="Bold"
-                                           LineBreakMode="TailTruncation" />
-
-                                    <HorizontalStackLayout Spacing="8">
-                                        <Label Text="{Binding LastModified, StringFormat='{0:g}'}"
-                                               FontSize="12"
-                                               TextColor="Gray" />
-
-                                        <Label Text="{Binding Size, StringFormat='{0:N0} bytes'}"
-                                               FontSize="12"
-                                               TextColor="Gray"
-                                               IsVisible="{Binding IsDirectory, Converter={StaticResource InvertedBoolConverter}}" />
-                                    </HorizontalStackLayout>
-                                </VerticalStackLayout>
-
-                                <!-- Arrow for directories -->
-                                <Label Grid.Column="2"
-                                       Text="›"
-                                       FontSize="24"
-                                       VerticalOptions="Center"
-                                       IsVisible="{Binding IsDirectory}" />
-                            </Grid>
-                        </SwipeView>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-        </RefreshView>
-
-        <!-- Status Bar -->
-        <StackLayout Grid.Row="3" 
-                     Orientation="Horizontal" 
-                     Margin="0,8,0,0">
-            <ActivityIndicator IsRunning="{Binding IsFileSystemLoading}" 
-                               WidthRequest="20" 
-                               HeightRequest="20"
-                               Margin="0,0,8,0" />
-            <Label Text="{Binding FileSystemItems.Count, StringFormat='{0} items'}" 
-                   VerticalOptions="Center" />
-        </StackLayout>
     </Grid>
-
 </ContentPage>

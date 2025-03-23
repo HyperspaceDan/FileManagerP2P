@@ -93,6 +93,9 @@
 	  <Compile Update="Views\FileExplorerPage.xaml.cs">
 	    <DependentUpon>FileExplorerPage.xaml</DependentUpon>
 	  </Compile>
+	  <Compile Update="Views\FileDetailsPage.xaml.cs">
+	    <DependentUpon>FileDetailsPage.xaml</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -100,6 +103,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\FileExplorerPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\FileDetailsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>
