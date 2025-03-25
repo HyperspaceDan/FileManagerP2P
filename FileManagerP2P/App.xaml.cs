@@ -9,7 +9,15 @@
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new AppShell());
+            var window = new Window(new AppShell());
+
+            // Perform navigation after window creation
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                await Shell.Current.GoToAsync("//FileExplorerPage");
+            });
+
+            return window;
         }
     }
 }

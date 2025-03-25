@@ -4,9 +4,23 @@
               xmlns:viewmodels="clr-namespace:FileManagerP2P.ViewModels"
               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
               x:Class="FileManagerP2P.Views.FileDetailsPage"
-             Title="File Details">
+              x:DataType="viewmodels:FileDetailsViewModel"
+              Title="File Details">
+    <ContentPage.MenuBarItems>
+        <MenuBarItem Text="File">
+            <MenuFlyoutItem Text="Open" Command="{Binding OpenFileCommand}"/>
+            <MenuFlyoutItem Text="Copy" Command="{Binding CopyFileCommand}"/>
+            <MenuFlyoutItem Text="Move" Command="{Binding MoveFileCommand}"/>
+            <MenuFlyoutItem Text="Rename" Command="{Binding RenameFileCommand}"/>
+            <MenuFlyoutItem Text="Delete" Command="{Binding DeleteFileCommand}"/>
+            <MenuFlyoutItem Text="Share" Command="{Binding ShareFileCommand}"/>
+        </MenuBarItem>
+    </ContentPage.MenuBarItems>
     <ScrollView>
         <Grid Padding="20" RowSpacing="20">
+            <Grid.GestureRecognizers>
+                <DragGestureRecognizer CanDrag="True" DragStarting="OnDragStarting"/>
+            </Grid.GestureRecognizers>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -65,7 +79,7 @@
                     <Border Stroke="#E0E0E0"
                            StrokeThickness="1"
                            Padding="10"
-                           StrokeShape="RoundedRectangle 5">
+                           StrokeShape="RoundRectangle 5">
                         <Label Text="{Binding PreviewContent}"
                                FontFamily="Courier New"/>
                     </Border>

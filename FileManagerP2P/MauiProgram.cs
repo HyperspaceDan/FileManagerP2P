@@ -50,36 +50,25 @@ public static class MauiProgram
         builder.Services.AddLogging(configure => configure.AddDebug());
 #endif
 
-        builder.Services.AddSingleton<ProjectRepository>();
-        builder.Services.AddSingleton<TaskRepository>();
-        builder.Services.AddSingleton<CategoryRepository>();
-        builder.Services.AddSingleton<TagRepository>();
-        builder.Services.AddSingleton<SeedDataService>();
         builder.Services.AddSingleton<ModalErrorHandler>();
-        builder.Services.AddSingleton<MainPageModel>();
-        builder.Services.AddSingleton<ProjectListPageModel>();
-        builder.Services.AddSingleton<ManageMetaPageModel>();
 
-        builder.Services.AddTransientWithShellRoute<ProjectDetailPage, ProjectDetailPageModel>("project");
-        builder.Services.AddTransientWithShellRoute<TaskDetailPage, TaskDetailPageModel>("task");
-
-#if WINDOWS
+//#if WINDOWS
 						
-						builder.Services.AddSingleton<FileManager.Core.Interfaces.IFileSystem>(sp => 
-						{
-							var logger = sp.GetRequiredService<ILogger<WindowsFileSystem>>();
-							var basePath = Path.Combine(FileSystem.AppDataDirectory, "Files");
-							var quotaConfig = new QuotaConfiguration
-							{
-								MaxSizeBytes = 1024 * 1024 * 1024, // 1GB default
-								RootPath = basePath,
-								WarningThreshold = 0.9f,
-								EnforceQuota = true
-							};
+//						builder.Services.AddSingleton<FileManager.Core.Interfaces.IFileSystem>(sp => 
+//						{
+//							var logger = sp.GetRequiredService<ILogger<WindowsFileSystem>>();
+//							var basePath = Path.Combine(FileSystem.AppDataDirectory, "Files");
+//							var quotaConfig = new QuotaConfiguration
+//							{
+//								MaxSizeBytes = 1024 * 1024 * 1024, // 1GB default
+//								RootPath = basePath,
+//								WarningThreshold = 0.9f,
+//								EnforceQuota = true
+//							};
 
-							return new WindowsFileSystem(logger, basePath, quotaConfig);
-						});
-#endif
+//							return new WindowsFileSystem(logger, basePath, quotaConfig);
+//						});
+//#endif
 
         builder.Services.AddSingleton<IFileSystemPathProvider>(serviceProvider =>
             new SecureFileSystemPathProvider(FileSystem.AppDataDirectory));

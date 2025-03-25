@@ -10,9 +10,11 @@ using System.Windows.Input;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.Controls;
 using System.IO;
+using CommunityToolkit.Maui.Storage;
 #if WINDOWS
 using Windows.Storage;
 using Windows.UI.StartScreen;
+using Windows.ApplicationModel.DataTransfer;
 #endif
 
 namespace FileManagerP2P.ViewModels;
@@ -129,7 +131,19 @@ public partial class FileDetailsViewModel : ObservableObject
         FilePath = FileItem.Path;
         FileSize = $"{FileItem.Size:N0} bytes";
         LastModified = FileItem.ModifiedDate;
-        FileIcon = FileItem.IsDirectory ? "folder.png" : "file.png";
+        // FileIcon = FileItem.IsDirectory ? "folder.png" : "file.png";
+        if (FileItem.IsDirectory)
+        {
+            FileIcon = "folder.png";
+        }
+        else
+        {
+            string extension = Path.GetExtension(FileName).ToLowerInvariant();
+            FileIcon = FileTypeIcons.TryGetValue(extension, out string? icon)
+                ? icon
+                : "file.png";
+        }
+
     }
 
     private async Task LoadPreviewAsync()
@@ -268,5 +282,111 @@ public partial class FileDetailsViewModel : ObservableObject
             }
         }
     }
+    [RelayCommand]
+    private async Task CopyFileAsync()
+    {
+        try
+        {
+            var folderPicker = await FolderPicker.Default.PickAsync();
+            if (folderPicker?.Folder != null)
+            {
+                string destinationPath = Path.Combine(folderPicker.Folder.Path, FileName);
+                File.Copy(FilePath, destinationPath, false);
+                await Shell.Current.DisplayAlert("Success", "File copied successfully", "OK");
+            }
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", "Could not copy file: " + ex.Message, "OK");
+        }
+    }
+
+    [RelayCommand]
+    private async Task MoveFileAsync()
+    {
+        try
+        {
+            var folderPicker = await FolderPicker.Default.PickAsync();
+            if (folderPicker?.Folder != null)
+            {
+                string destinationPath = Path.Combine(folderPicker.Folder.Path, FileName);
+                File.Move(FilePath, destinationPath);
+                await Shell.Current.GoToAsync("..");
+            }
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", "Could not move file: " + ex.Message, "OK");
+        }
+    }
+
+    [RelayCommand]
+    private async Task RenameFileAsync()
+    {
+        string newName = await Shell.Current.DisplayPromptAsync(
+            "Rename File",
+            "Enter new file name:",
+            initialValue: FileName);
+
+        if (string.IsNullOrEmpty(newName) || newName == FileName)
+            return;
+
+        try
+        {
+            string newPath = Path.Combine(Path.GetDirectoryName(FilePath)!, newName);
+            File.Move(FilePath, newPath);
+            FilePath = newPath;
+            FileName = newName;
+        }
+        catch (Exception ex)
+        {
+            await Shell.Current.DisplayAlert("Error", "Could not rename file: " + ex.Message, "OK");
+        }
+    }
+
+    // Add a dictionary for file type icons
+    private static readonly Dictionary<string, string> FileTypeIcons = new()
+{
+    { ".txt", "text_file.png" },
+    { ".doc", "word_file.png" },
+    { ".docx", "word_file.png" },
+    { ".pdf", "pdf_file.png" },
+    { ".jpg", "image_file.png" },
+    { ".jpeg", "image_file.png" },
+    { ".png", "image_file.png" },
+    { ".mp3", "audio_file.png" },
+    { ".mp4", "video_file.png" },
+    { ".zip", "archive_file.png" },
+    // Add more file types as needed
+};
+
+
+#if WINDOWS
+
+// Add these properties
+private bool _isContextMenuVisible;
+public bool IsContextMenuVisible
+{
+    get => _isContextMenuVisible;
+    set => SetProperty(ref _isContextMenuVisible, value);
+}
+
+[RelayCommand]
+private void ShowContextMenu()
+{
+    IsContextMenuVisible = true;
+}
+
+// Add drag-drop support
+public void InitializeDragDrop()
+{
+    var dragData = new Windows.ApplicationModel.DataTransfer.DataPackage();
+    var storageFile = StorageFile.GetFileFromPathAsync(FilePath).GetAwaiter().GetResult();
+    dragData.SetStorageItems([storageFile]); 
+    dragData.RequestedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy;
+
+}
+#endif
+
 }
 

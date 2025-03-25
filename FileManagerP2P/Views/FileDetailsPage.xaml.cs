@@ -8,4 +8,13 @@ public partial class FileDetailsPage : ContentPage
         InitializeComponent();
         BindingContext = viewModel;
     }
+    private void OnDragStarting(object sender, DragStartingEventArgs e)
+    {
+        var vm = BindingContext as FileDetailsViewModel;
+#if WINDOWS
+        vm?.InitializeDragDrop();
+#endif
+        
+    }
+
 }

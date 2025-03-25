@@ -34,7 +34,7 @@
                 <Border Grid.Column="1"
                        Stroke="LightGray"
                        Padding="8,0"
-                       StrokeShape="RoundedRectangle 5">
+                       StrokeShape="RoundRectangle 5">
                     <Label Text="{Binding CurrentDirectoryPath}"
                            VerticalOptions="Center" 
                            LineBreakMode="TailTruncation" />
@@ -75,7 +75,7 @@
                    BackgroundColor="LightPink"
                    Margin="0,8,0,0"
                    Padding="12"
-                   StrokeShape="RoundedRectangle 5">
+                   StrokeShape="RoundRectangle 5,5,5,5">
                 <Label Text="{Binding FileSystemErrorMessage}"
                        TextColor="DarkRed" />
             </Border>
