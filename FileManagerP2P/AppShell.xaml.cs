@@ -13,7 +13,23 @@ public partial class AppShell : Shell
         // Register routes for navigation
         Routing.RegisterRoute(nameof(Views.FileExplorerPage), typeof(Views.FileExplorerPage));
 
+        // Register routes if needed
+        Routing.RegisterRoute("FileDetails", typeof(Views.FileDetailsPage));
+
+        // Navigate once the shell is loaded
+        this.Loaded += AppShell_Loaded;
+
     }
+    private async void AppShell_Loaded(object? sender, EventArgs e)
+    {
+        // Navigation is now safe because Shell.Current is available
+        await Shell.Current.GoToAsync("//FileExplorerPage");
+
+        // Unsubscribe to prevent multiple navigations
+        this.Loaded -= AppShell_Loaded;
+    }
+
+
     public static async Task DisplaySnackbarAsync(string message)
 	{
 		var cancellationTokenSource = new CancellationTokenSource();

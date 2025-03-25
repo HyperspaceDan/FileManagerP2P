@@ -6,10 +6,12 @@
              xmlns:models="clr-namespace:FileManager.Core.Models;assembly=FileManager.Core"
              x:Class="FileManagerP2P.Views.FileExplorerPage"
              x:DataType="viewmodels:FileExplorerViewModel"
+             x:Name="FileExplorerPageElement"
              Title="File Explorer">
 
     <ContentPage.Resources>
         <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        <toolkit:BoolToObjectConverter x:Key="BoolToImageConverter" TrueObject="folder.png" FalseObject="file.png" />
     </ContentPage.Resources>
 
     <Grid>
@@ -103,7 +105,10 @@
                                     <SwipeItems>
                                         <SwipeItem Text="Delete"
                                                    BackgroundColor="Red"
-                                                   Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FileExplorerViewModel}}, Path=DeleteSelectedFileSystemItemCommand}" />
+                                                   Command="{Binding Source={x:Reference FileExplorerPageElement}, Path=BindingContext.DeleteSelectedFileSystemItemCommand}"
+                                                   CommandParameter="{Binding Self}" />
+
+
                                     </SwipeItems>
                                 </SwipeView.RightItems>
 
@@ -185,7 +190,7 @@
 
                 <Button Grid.Column="1" 
                         Text="X" 
-                        Command="{Binding PreviewSelectedAsyncFileCommand}"
+                        Command="{Binding PreviewSelectedFileCommand}"
                         CommandParameter="{x:Null}"
                         WidthRequest="40" 
                         HeightRequest="40" 

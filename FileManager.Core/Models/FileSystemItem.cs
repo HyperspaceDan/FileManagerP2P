@@ -13,5 +13,7 @@ namespace FileManager.Core.Models
         public bool IsDirectory { get; set; }
         public long Size { get; set; }
         public DateTime ModifiedDate { get; set; }
+
+        public FileSystemItem Self => this;
     }
 }
