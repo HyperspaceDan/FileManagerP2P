@@ -170,6 +170,7 @@ namespace FileManagerP2P.Platforms.Android.Services
 
             public override void OnSignalStrengthsChanged(SignalStrength signalStrength)
             {
+                ArgumentNullException.ThrowIfNull(signalStrength);
                 base.OnSignalStrengthsChanged(signalStrength);
 
                 try

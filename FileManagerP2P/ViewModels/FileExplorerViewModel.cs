@@ -156,9 +156,25 @@ namespace FileManagerP2P.ViewModels
             set => SetProperty(ref _previewImage, value);
         }
 
+        [RelayCommand]
+        private async Task PreviewSelectedFile(object parameter)
+        {
+            // This command can be used to show/hide the preview
+            if (parameter == null)
+            {
+                // When null is passed, hide the preview
+                IsPreviewVisible = false;
+                return;
+            }
+
+            // Otherwise, show preview if there's a selected item
+            await ShowPreviewSelectedFileAsync();
+        }
+
+
         // Then add this method to handle file selection and preview
         [RelayCommand]
-        private async Task PreviewSelectedFileAsync()
+        private async Task ShowPreviewSelectedFileAsync()
         {
             if (SelectedFileSystemItem == null || SelectedFileSystemItem.IsDirectory)
             {
@@ -263,7 +279,19 @@ namespace FileManagerP2P.ViewModels
             if (value != null)
             {
                 // Call the method directly instead of using the command
-                PreviewSelectedFileAsync().ConfigureAwait(false);
+                // Use MainThread to safely invoke the async method without directly awaiting it
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    try
+                    {
+                        await ShowPreviewSelectedFileAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error previewing file: {ex.Message}");
+                        // Optionally handle the exception here
+                    }
+                });
             }
             else
             {
