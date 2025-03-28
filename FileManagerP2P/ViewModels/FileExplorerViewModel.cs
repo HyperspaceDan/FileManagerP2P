@@ -12,18 +12,9 @@ using FileManager.Core.Models;
 using System.Diagnostics;
 using Microsoft.Maui.ApplicationModel;
 using CommunityToolkit.Maui.Core;
-#if ANDROID
-using Android.Telephony;
-#endif
-
 namespace FileManagerP2P.ViewModels
 {
-    public interface ITelephonyService
-    {
-        // Define methods you need from TelephonyManager
-        string GetDeviceId();
-        // Other methods you need
-    }
+    
     public partial class FileExplorerViewModel : ObservableObject
     {
         private readonly FileManager.Core.Interfaces.IFileSystem _fileSystem;

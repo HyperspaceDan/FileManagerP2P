@@ -48,37 +48,35 @@ public static class MauiProgram
 
         builder.Services.AddSingleton<ModalErrorHandler>();
 
-//#if WINDOWS
-						
-//						builder.Services.AddSingleton<FileManager.Core.Interfaces.IFileSystem>(sp => 
-//						{
-//							var logger = sp.GetRequiredService<ILogger<WindowsFileSystem>>();
-//							var basePath = Path.Combine(FileSystem.AppDataDirectory, "Files");
-//							var quotaConfig = new QuotaConfiguration
-//							{
-//								MaxSizeBytes = 1024 * 1024 * 1024, // 1GB default
-//								RootPath = basePath,
-//								WarningThreshold = 0.9f,
-//								EnforceQuota = true
-//							};
+        //#if WINDOWS
 
-//							return new WindowsFileSystem(logger, basePath, quotaConfig);
-//						});
-//#endif
+        //						builder.Services.AddSingleton<FileManager.Core.Interfaces.IFileSystem>(sp => 
+        //						{
+        //							var logger = sp.GetRequiredService<ILogger<WindowsFileSystem>>();
+        //							var basePath = Path.Combine(FileSystem.AppDataDirectory, "Files");
+        //							var quotaConfig = new QuotaConfiguration
+        //							{
+        //								MaxSizeBytes = 1024 * 1024 * 1024, // 1GB default
+        //								RootPath = basePath,
+        //								WarningThreshold = 0.9f,
+        //								EnforceQuota = true
+        //							};
+
+        //							return new WindowsFileSystem(logger, basePath, quotaConfig);
+        //						});
+        //#endif
 
         builder.Services.AddSingleton<IFileSystemPathProvider>(serviceProvider =>
             new SecureFileSystemPathProvider(FileSystem.AppDataDirectory));
 #if WINDOWS
+        builder.Services.AddSingleton<ITelephonyService, WindowsTelephonyService>();
         // Register the file system with the async factory method
         builder.Services.AddSingleton<FileManager.Core.Interfaces.IFileSystem>(serviceProvider =>
         {
             var logger = serviceProvider.GetRequiredService<ILogger<WindowsFileSystem>>();
             var pathProvider = serviceProvider.GetRequiredService<IFileSystemPathProvider>();
 
-            // We need to handle the async factory method since DI doesn't natively support async
-            // This is a common pattern to handle async factory methods with sync DI
             // Create immediately with default path
-            //Better approach with async factory and initialization tracking
             var fileSystem = new WindowsFileSystem(logger);
 
             // Start async initialization separately
@@ -140,11 +138,9 @@ public static class MauiProgram
         }
 
 #endif
-
         // Register views and view models
         builder.Services.AddSingleton<FileExplorerViewModel>();
         builder.Services.AddSingleton<FileExplorerPage>();
-
 
         return builder.Build();
     }
