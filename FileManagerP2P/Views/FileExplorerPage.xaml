@@ -140,7 +140,7 @@
                                         VerticalOptions="Center"
                                         HorizontalOptions="Center"
                                         Command="{Binding Source={x:Reference FileExplorerPageElement}, Path=BindingContext.DeleteSelectedFileSystemItemCommand}"
-                                        CommandParameter="{Binding Self}" />
+                                        CommandParameter="{Binding .}" />
                                 
                                 <!-- Arrow for directories -->
                                 <Label Grid.Column="3"

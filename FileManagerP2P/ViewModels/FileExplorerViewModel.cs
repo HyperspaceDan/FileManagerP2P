@@ -507,9 +507,9 @@ namespace FileManagerP2P.ViewModels
         }
 
         [RelayCommand]
-        private async Task DeleteSelectedFileSystemItemAsync()
+        private async Task DeleteSelectedFileSystemItemAsync(FileSystemItem item)
         {
-            if (SelectedFileSystemItem == null)
+            if (item == null)
                 return;
 
             try
@@ -518,7 +518,7 @@ namespace FileManagerP2P.ViewModels
                 HasFileSystemError = false;
                 FileSystemErrorMessage = string.Empty;
 
-                await _fileSystem.DeleteItem(SelectedFileSystemItem.Path);
+                await _fileSystem.DeleteItem(item.Path);
 
                 // Refresh to update the view
                 await RefreshFileSystemAsync();
